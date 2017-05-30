@@ -22,6 +22,7 @@ def convert_to(spectrograms, name):
     for index in range(num_examples):
         spectrograms_raw = spectrograms[index].tostring()
         example = tf.train.Example(features=tf.train.Features(feature={
+            'num': _int64_feature(num_examples),
             'height': _int64_feature(rows),
             'width': _int64_feature(cols),
             'depth': _int64_feature(depth),
@@ -30,18 +31,36 @@ def convert_to(spectrograms, name):
     # Remember to generate a file name queue of you 'train.TFRecord' file path
 
 
-def read_and_decode(filename_queue):
+def read_and_decode(filename_queue, include_num=False):
     reader = tf.TFRecordReader()
     _, serialized_example = reader.read(filename_queue)
-    features = tf.parse_single_example(
-        serialized_example, \
-        features = {
-            'spectrograms_raw': tf.FixedLenFeature([], tf.string),
-            'height': tf.FixedLenFeature([], tf.int64),
-            'width': tf.FixedLenFeature([], tf.int64)
-            })
-    spectrograms = tf.decode_raw(features['spectrograms_raw'], tf.float32)
-    height = tf.cast(features['height'], tf.int32)
-    width = tf.cast(features['width'], tf.int32)
+    if include_num==True:
+        features = tf.parse_single_example(
+            serialized_example, \
+            features = {
+                'spectrograms_raw': tf.FixedLenFeature([], tf.string),
+                'height': tf.FixedLenFeature([], tf.int64),
+                'width': tf.FixedLenFeature([], tf.int64),
+                'num': tf.FixedLenFeature([], tf.int64),
+                'depth': tf.FixedLenFeature([], tf.int64)
+                })
+        spectrograms = tf.decode_raw(features['spectrograms_raw'], tf.float32)
+        height = tf.cast(features['height'], tf.int32)
+        width = tf.cast(features['width'], tf.int32)
+        num = tf.cast(features['num'], tf.int32)
+        depth = tf.cast(features['depth'], tf.int32)
+    else:
+        features = tf.parse_single_example(
+            serialized_example, \
+            features = {
+                'spectrograms_raw': tf.FixedLenFeature([], tf.string),
+                'height': tf.FixedLenFeature([], tf.int64),
+                'width': tf.FixedLenFeature([], tf.int64)
+                })
+        spectrograms = tf.decode_raw(features['spectrograms_raw'], tf.float32)
+        height = tf.cast(features['height'], tf.int32)
+        width = tf.cast(features['width'], tf.int32)
+        depth = 1
+        num = 400
 
-    return spectrograms, height, width
+    return spectrograms, height, width, depth, num

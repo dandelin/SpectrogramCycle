@@ -16,8 +16,8 @@ from glob import glob
 
 """ param """
 parser = argparse.ArgumentParser(description='')
-parser.add_argument('--dataset', dest='dataset', default='speech2', help='which dataset to use')
-parser.add_argument('--epoch', dest='epoch', type=int, default=200, help='# of epoch')
+parser.add_argument('--dataset', dest='dataset', default='speech3', help='which dataset to use')
+parser.add_argument('--epoch', dest='epoch', type=int, default=10000, help='# of epoch')
 parser.add_argument('--batch_size', dest='batch_size', type=int, default=1, help='# images in a batch')
 parser.add_argument('--lr', dest='lr', type=float, default=0.0002, help='initial learning rate for adam')
 parser.add_argument('--gpu_id', dest='gpu_id', type=int, default=0, help='GPU ID')
@@ -32,18 +32,16 @@ gpu_id = args.gpu_id
 a_train_path, b_train_path = ['./datasets/' + dataset + '/train{}/'.format(e) for e in ['A', 'B']]
 a_test_path, b_test_path = ['./datasets/' + dataset + '/test{}/'.format(e) for e in ['A', 'B']]
 
-a_height, a_width = batching_spectrograms.wh_from_sample(a_train_path)
-b_height, b_width = batching_spectrograms.wh_from_sample(b_train_path)
-
+height, width = batching_spectrograms.wh_from_sample(a_train_path)
 
 """ graphs """
 with tf.device('/gpu:%d' % gpu_id):
     ''' graph '''
     # nodes
-    a_real = tf.placeholder(tf.float32, shape=[None, a_height, a_width, 1])
-    b_real = tf.placeholder(tf.float32, shape=[None, b_height, b_width, 1])
-    a2b_sample = tf.placeholder(tf.float32, shape=[None, a_height, a_width, 1])
-    b2a_sample = tf.placeholder(tf.float32, shape=[None, b_height, b_width, 1])
+    a_real = tf.placeholder(tf.float32, shape=[None, height, width, 1])
+    b_real = tf.placeholder(tf.float32, shape=[None, height, width, 1])
+    a2b_sample = tf.placeholder(tf.float32, shape=[None, height, width, 1])
+    b2a_sample = tf.placeholder(tf.float32, shape=[None, height, width, 1])
 
     a2b = models_spec.generator(a_real, 'a2b')
     b2a = models_spec.generator(b_real, 'b2a')
@@ -162,18 +160,18 @@ try:
             print('Model saved in file: % s' % save_path)
 
         # sample
-        if (it) % 100 == 0:
+        if (it) % 500 == 0:
             reconstruct = batching_spectrograms.save_reconstructed_audio
             a_real_ipt = a_test_pool.batch()
             b_real_ipt = b_test_pool.batch()
             [a2b_opt, a2b2a_opt, b2a_opt, b2a2b_opt] = sess.run([a2b, a2b2a, b2a, b2a2b], feed_dict={a_real: a_real_ipt, b_real: b_real_ipt})
             samples = [a_real_ipt, a2b_opt, a2b2a_opt, b_real_ipt, b2a_opt, b2a2b_opt]
-            sample_opt = np.concatenate([np.reshape(sample, (1, 256, 256)) for sample in samples], axis=0)
+            sample_opt = np.concatenate([np.reshape(sample, (1, height, width)) for sample in samples], axis=0)
 
             save_dir = './sample_images_while_training/' + dataset
             utils.mkdir(save_dir + '/')
-            im.imwrite(im.immerge(sample_opt, 2, 3), '%s/Epoch_(%d)_(%dof%d).jpg' % (save_dir, epoch, it_epoch, batch_epoch))
-            for name, sample in zip(['a', 'ab', 'aba', 'b', 'ba', 'bab'], samples):
+            #im.imwrite(im.immerge(sample_opt, 2, 3), '%s/Epoch_(%d)_(%dof%d).jpg' % (save_dir, epoch, it_epoch, batch_epoch))
+            for i, (name, sample) in enumerate(zip(['a', 'ab', 'aba', 'b', 'ba', 'bab'], samples)):
                 reconstruct(sample, '{}/Epoch{}_{}of{}_{}.wav'.format(save_dir, epoch, it_epoch, batch_epoch, name))
 
 except Exception as e:

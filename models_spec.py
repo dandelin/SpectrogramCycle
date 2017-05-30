@@ -71,6 +71,6 @@ def generator(img, scope, gf_dim=64, reuse=False, train=True):
 
         pred = conv(d2, 1, 7, 1, padding='VALID', scope='pred_conv')
         print(pred)
-        pred = tf.nn.tanh(pred)
+        #pred = tf.nn.tanh(pred)
 
         return pred

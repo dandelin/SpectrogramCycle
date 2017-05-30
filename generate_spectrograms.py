@@ -16,9 +16,9 @@ def _bytes_feature(value):
 
 def make_spectrograms_from_mp3s(dirpath):
     SAMPLING_RATE = 16000
-    FFT_SIZE = 510 #Frequency resolution
+    FFT_SIZE = 1022 #Frequency resolution
     HOP_LENGTH = None # int(FFT_SIZE/6.5)
-    DURATION = 2.03
+    DURATION = 8.15
 
     audios = glob(dirpath + '/*.mp3')
 
@@ -26,7 +26,7 @@ def make_spectrograms_from_mp3s(dirpath):
         print("{}th audio : ".format(i), audio)
         y, sr = librosa.core.load(audio, sr=SAMPLING_RATE, mono=True)
         lst = []
-        for cutpoint in range(int(librosa.get_duration(y) / DURATION) - 1):
+        for cutpoint in range(int(librosa.get_duration(y) / DURATION)):
             block = y[cutpoint * SAMPLING_RATE:int((cutpoint + DURATION) * SAMPLING_RATE)]
             D = librosa.stft(y=block, n_fft=FFT_SIZE, hop_length=HOP_LENGTH, center=True) # win_length = FFT_SIZE
             D = np.abs(D)   # since D is a complex number
@@ -37,5 +37,4 @@ def make_spectrograms_from_mp3s(dirpath):
         convert_to(lst, name)
 
 if __name__=='__main__':
-    make_spectrograms_from_mp3s('datasets/obama')
-    make_spectrograms_from_mp3s('datasets/bush')    
+    make_spectrograms_from_mp3s('datasets/piano-violin')
