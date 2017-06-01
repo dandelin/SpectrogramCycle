@@ -3,13 +3,14 @@ from __future__ import division
 from __future__ import print_function
 
 import ops
-import batching_spectrograms
+import batching_spectrograms_single
 import utils
 import models_spec
 import argparse
 import numpy as np
 import tensorflow as tf
 import image_utils as im
+from scipy import stats
 
 from glob import glob
 
@@ -32,7 +33,7 @@ gpu_id = args.gpu_id
 a_train_path, b_train_path = ['./datasets/' + dataset + '/train{}/'.format(e) for e in ['A', 'B']]
 a_test_path, b_test_path = ['./datasets/' + dataset + '/test{}/'.format(e) for e in ['A', 'B']]
 
-height, width = batching_spectrograms.wh_from_sample(a_train_path)
+height, width = 512, 512
 
 """ graphs """
 with tf.device('/gpu:%d' % gpu_id):
@@ -96,11 +97,11 @@ sess = tf.Session(config=config)
 it_cnt, update_cnt = ops.counter()
 
 '''data'''
-a_data_pool = batching_spectrograms.SpecData(sess, a_train_path, batch_size)
-b_data_pool = batching_spectrograms.SpecData(sess, b_train_path, batch_size)
+a_data_pool = batching_spectrograms_single.SpecData(sess, a_train_path, batch_size)
+b_data_pool = batching_spectrograms_single.SpecData(sess, b_train_path, batch_size)
 
-a_test_pool = batching_spectrograms.SpecData(sess, a_test_path, batch_size)
-b_test_pool = batching_spectrograms.SpecData(sess, b_test_path, batch_size)
+a_test_pool = batching_spectrograms_single.SpecData(sess, a_test_path, batch_size)
+b_test_pool = batching_spectrograms_single.SpecData(sess, b_test_path, batch_size)
 
 a2b_pool = utils.ItemPool()
 b2a_pool = utils.ItemPool()
@@ -136,6 +137,10 @@ try:
         a2b_sample_ipt = np.array(a2b_pool(list(a2b_opt)))
         b2a_sample_ipt = np.array(b2a_pool(list(b2a_opt)))
 
+        stat = [stats.describe(arr, axis=None) for arr in [a_real_ipt, b_real_ipt, a2b_opt, b2a_opt, a2b_sample_ipt, b2a_sample_ipt]]
+        for s in stat:
+            print(s)
+
         # train G
         g_summary_opt, _ = sess.run([g_summary, g_train_op], feed_dict={a_real: a_real_ipt, b_real: b_real_ipt})
         summary_writer.add_summary(g_summary_opt, it)
@@ -161,7 +166,7 @@ try:
 
         # sample
         if (it) % 500 == 0:
-            reconstruct = batching_spectrograms.save_reconstructed_audio
+            reconstruct = batching_spectrograms_single.save_reconstructed_audio
             a_real_ipt = a_test_pool.batch()
             b_real_ipt = b_test_pool.batch()
             [a2b_opt, a2b2a_opt, b2a_opt, b2a2b_opt] = sess.run([a2b, a2b2a, b2a, b2a2b], feed_dict={a_real: a_real_ipt, b_real: b_real_ipt})
@@ -170,7 +175,7 @@ try:
 
             save_dir = './sample_images_while_training/' + dataset
             utils.mkdir(save_dir + '/')
-            #im.imwrite(im.immerge(sample_opt, 2, 3), '%s/Epoch_(%d)_(%dof%d).jpg' % (save_dir, epoch, it_epoch, batch_epoch))
+            # im.imwrite(im.immerge(sample_opt, 2, 3), '%s/Epoch_(%d)_(%dof%d).jpg' % (save_dir, epoch, it_epoch, batch_epoch))
             for i, (name, sample) in enumerate(zip(['a', 'ab', 'aba', 'b', 'ba', 'bab'], samples)):
                 reconstruct(sample, '{}/Epoch{}_{}of{}_{}.wav'.format(save_dir, epoch, it_epoch, batch_epoch, name))
 

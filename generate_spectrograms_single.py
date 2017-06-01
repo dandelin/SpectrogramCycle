@@ -6,7 +6,7 @@ import math
 import tensorflow as tf
 from os import walk, mkdir
 from glob import glob
-from tf_record import convert_to
+from tf_record_single import convert_to
 
 def _int64_feature(value):
   return tf.train.Feature(int64_list=tf.train.Int64List(value=[value]))
@@ -25,16 +25,15 @@ def make_spectrograms_from_mp3s(dirpath):
     for i, audio in enumerate(audios):
         print("{}th audio : ".format(i), audio)
         y, sr = librosa.core.load(audio, sr=SAMPLING_RATE, mono=True)
-        lst = []
-        for cutpoint in range(int(librosa.get_duration(y) / DURATION)):
+        length = int(librosa.get_duration(y) / DURATION)
+        for j, cutpoint in enumerate(range(length)):
+            print("{}/{}".format(j, length))
             block = y[cutpoint * SAMPLING_RATE:int((cutpoint + DURATION) * SAMPLING_RATE)]
-            D = librosa.stft(y=block, n_fft=FFT_SIZE, hop_length=HOP_LENGTH, center=True) # win_length = FFT_SIZE
+            D = librosa.stft(block, n_fft=FFT_SIZE)
             D = np.abs(D)   # since D is a complex number
             D = np.expand_dims(D, axis=2)
-            lst.append(D)
-        lst = np.asarray(lst, dtype=np.float32)
-        name = audio[:-3] + 'spec'
-        convert_to(lst, name)
+            name = audio[:-4] + '{}.spec'.format(j)
+            convert_to(D, name)
 
 if __name__=='__main__':
     make_spectrograms_from_mp3s('datasets/guitar-cello')
