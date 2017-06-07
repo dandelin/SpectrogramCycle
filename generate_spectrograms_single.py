@@ -36,4 +36,4 @@ def make_spectrograms_from_mp3s(dirpath):
             convert_to(D, name)
 
 if __name__=='__main__':
-    make_spectrograms_from_mp3s('datasets/guitar-cello')
+    make_spectrograms_from_mp3s('datasets/park')

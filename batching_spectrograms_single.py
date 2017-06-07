@@ -14,6 +14,13 @@ def wh_from_sample(dirname, sess=None):
         threads = tf.train.start_queue_runners(sess=sess, coord=coord)
     return sess.run(height), sess.run(width)
 
+def minmax_normalize(tensor):
+    min = tf.reduce_min(tensor)
+    max = tf.reduce_max(tensor)
+    a = tf.subtract(tensor, min)
+    b = tf.subtract(max, min)
+    return tf.div(a, b)
+
 def spec_batch(dirname, sess=None, batch_size=1, num_threads=4, min_after_dequeue=10, shuffle=True):
     specs = glob('{}/*.spec'.format(dirname))
 
@@ -22,9 +29,9 @@ def spec_batch(dirname, sess=None, batch_size=1, num_threads=4, min_after_dequeu
     spectrogram, height, width, depth = read_and_decode(filename_queue)
     spectrogram = tf.reshape(spectrogram, [512, 512, 1])
 
-    # spectrogram /= tf.reduce_max(spectrogram)
-    # spectrogram *= 255
-    # spectrogram = spectrogram / 127.5 - 1
+    spectrogram = tf.log(spectrogram) / tf.log(10.0)
+    spectrogram = minmax_normalize(spectrogram)
+    spectrogram = tf.subtract(tf.multiply(spectrogram, 2.0), 1.0)
 
     if shuffle==True:
         capacity = min_after_dequeue + (num_threads + 1) * batch_size
@@ -70,10 +77,10 @@ def save_reconstructed_audio(spectrogram, filename, iter=100):
     SAMPLING_RATE = 16000
     FFT_SIZE = 1022 #Frequency resolution
     HOP_LENGTH = None
-    # spectrogram = np.power(10, spectrogram) # If the input specrogram is scaled with logarithm, use this line.
+    spectrogram = (spectrogram + 1) / 2
+    spectrogram = np.power(10, spectrogram) # If the input specrogram is scaled with logarithm, use this line.
     p = 2 * np.pi * np.random.random_sample(spectrogram.shape) - np.pi
     for i in range(iter):
-        # S = ((spectrogram + 1) * 127.5) * np.exp(1j*p)
         S = spectrogram * np.exp(1j*p)
         x = librosa.istft(S, hop_length = HOP_LENGTH, win_length = FFT_SIZE)
         p = np.angle(librosa.stft(x, n_fft = FFT_SIZE, hop_length = HOP_LENGTH))

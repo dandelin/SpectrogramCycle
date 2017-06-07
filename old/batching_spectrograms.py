@@ -24,6 +24,8 @@ def spec_batch(dirname, sess=None, batch_size=1, num_threads=4, min_after_dequeu
     print(height, width)
     spectrogram = tf.reshape(spectrogram, [height, width, 1])
 
+    print(spectrogram)
+
     # spectrogram /= tf.reduce_max(spectrogram)
     # spectrogram *= 255
     # spectrogram = spectrogram / 127.5 - 1
