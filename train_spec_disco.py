@@ -5,7 +5,7 @@ from __future__ import print_function
 import ops
 import batching_spectrograms_single
 import utils
-import models_spec
+import models_spec_disco
 import argparse
 import numpy as np
 import tensorflow as tf
@@ -40,7 +40,7 @@ gpu_id = args.gpu_id
 a_train_path, b_train_path = ['./datasets/' + dataset + '/train{}/'.format(e) for e in ['A', 'B']]
 a_test_path, b_test_path = ['./datasets/' + dataset + '/test{}/'.format(e) for e in ['A', 'B']]
 
-height, width = 512, 512
+height, width = 512, 128
 
 """ graphs """
 with tf.device('/gpu:%d' % gpu_id):
@@ -51,17 +51,17 @@ with tf.device('/gpu:%d' % gpu_id):
     a2b_sample = tf.placeholder(tf.float32, shape=[None, height, width, 1])
     b2a_sample = tf.placeholder(tf.float32, shape=[None, height, width, 1])
 
-    a2b = models_spec.generator(a_real, 'a2b')
-    b2a = models_spec.generator(b_real, 'b2a')
-    b2a2b = models_spec.generator(b2a, 'a2b', reuse=True)
-    a2b2a = models_spec.generator(a2b, 'b2a', reuse=True)
+    a2b = models_spec_disco.generator(a_real, 'a2b')
+    b2a = models_spec_disco.generator(b_real, 'b2a')
+    b2a2b = models_spec_disco.generator(b2a, 'a2b', reuse=True)
+    a2b2a = models_spec_disco.generator(a2b, 'b2a', reuse=True)
 
-    a_dis = models_spec.discriminator(a_real, 'a')
-    b2a_dis = models_spec.discriminator(b2a, 'a', reuse=True)
-    b2a_sample_dis = models_spec.discriminator(b2a_sample, 'a', reuse=True)
-    b_dis = models_spec.discriminator(b_real, 'b')
-    a2b_dis = models_spec.discriminator(a2b, 'b', reuse=True)
-    a2b_sample_dis = models_spec.discriminator(a2b_sample, 'b', reuse=True)
+    a_dis = models_spec_disco.discriminator(a_real, 'a')
+    b2a_dis = models_spec_disco.discriminator(b2a, 'a', reuse=True)
+    b2a_sample_dis = models_spec_disco.discriminator(b2a_sample, 'a', reuse=True)
+    b_dis = models_spec_disco.discriminator(b_real, 'b')
+    a2b_dis = models_spec_disco.discriminator(a2b, 'b', reuse=True)
+    a2b_sample_dis = models_spec_disco.discriminator(a2b_sample, 'b', reuse=True)
 
     # losses
     g_loss_a2b = tf.identity(ops.l2_loss(a2b_dis, tf.ones_like(a2b_dis)), name='g_loss_a2b')
@@ -114,10 +114,10 @@ a2b_pool = utils.ItemPool()
 b2a_pool = utils.ItemPool()
 
 '''summary'''
-summary_writer = tf.summary.FileWriter('./summaries/' + dataset, sess.graph)
+summary_writer = tf.summary.FileWriter('./summaries/' + dataset + '_disco', sess.graph)
 
 '''saver'''
-ckpt_dir = './checkpoints/' + dataset
+ckpt_dir = './checkpoints/' + dataset + '_disco'
 utils.mkdir(ckpt_dir + '/')
 
 saver = tf.train.Saver(max_to_keep=5)
@@ -179,7 +179,7 @@ try:
             samples = [a_real_ipt, a2b_opt, a2b2a_opt, b_real_ipt, b2a_opt, b2a2b_opt]
             sample_opt = np.concatenate([np.reshape(minmax_normalize(sample), (1, height, width)) for sample in samples], axis=0)
 
-            save_dir = './sample_images_while_training/' + dataset
+            save_dir = './sample_images_while_training/' + dataset + '_disco'
             utils.mkdir(save_dir + '/')
             im.imwrite(im.immerge(sample_opt, 2, 3), '%s/it(%d)_Epoch_(%d)_(%dof%d).jpg' % (save_dir, it, epoch, it_epoch, batch_epoch))
             for i, (name, sample) in enumerate(zip(['a', 'ab', 'aba', 'b', 'ba', 'bab'], samples)):

@@ -4,3 +4,4 @@ __pycache__/
 summaries/
 sample_images_while_training/
 checkpoints/
+test_predictions/

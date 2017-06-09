@@ -27,18 +27,19 @@ def spec_batch(dirname, sess=None, batch_size=1, num_threads=4, min_after_dequeu
     filename_queue = tf.train.string_input_producer(list(specs), shuffle=True)
     num = len(list(specs))
     spectrogram, height, width, depth = read_and_decode(filename_queue)
-    spectrogram = tf.reshape(spectrogram, [512, 512, 1])
+    spectrogram = tf.reshape(spectrogram, [512, 128, 1])
 
-    spectrogram = tf.log(spectrogram) / tf.log(10.0)
-    spectrogram = minmax_normalize(spectrogram)
-    spectrogram = tf.subtract(tf.multiply(spectrogram, 2.0), 1.0)
+    # spectrogram = tf.log(spectrogram) / tf.log(10.0)
+    # spectrogram = minmax_normalize(spectrogram)
+    # spectrogram = tf.subtract(tf.multiply(spectrogram, 2.0), 1.0)
 
+
+    capacity = min_after_dequeue + (num_threads + 1) * batch_size
     if shuffle==True:
-        capacity = min_after_dequeue + (num_threads + 1) * batch_size
         spec_batch = tf.train.shuffle_batch([spectrogram], batch_size=batch_size, capacity=capacity,
             min_after_dequeue=min_after_dequeue, num_threads=num_threads)
     else:
-        spec_batch = tf.train.batch([spectrogram])
+        spec_batch = tf.train.batch([spectrogram], batch_size=batch_size, capacity=capacity)
 
     if sess==None:
         sess = tf.InteractiveSession()
@@ -77,8 +78,8 @@ def save_reconstructed_audio(spectrogram, filename, iter=100):
     SAMPLING_RATE = 16000
     FFT_SIZE = 1022 #Frequency resolution
     HOP_LENGTH = None
-    spectrogram = (spectrogram + 1) / 2
-    spectrogram = np.power(10, spectrogram) # If the input specrogram is scaled with logarithm, use this line.
+    # spectrogram = (spectrogram + 1) / 2
+    # spectrogram = np.power(10, spectrogram) # If the input specrogram is scaled with logarithm, use this line.
     p = 2 * np.pi * np.random.random_sample(spectrogram.shape) - np.pi
     for i in range(iter):
         S = spectrogram * np.exp(1j*p)

@@ -18,9 +18,10 @@ def make_spectrograms_from_mp3s(dirpath):
     SAMPLING_RATE = 16000
     FFT_SIZE = 1022 #Frequency resolution
     HOP_LENGTH = None # int(FFT_SIZE/6.5)
-    DURATION = 8.15
+    # DURATION = 8.15
+    DURATION = 2.0375
 
-    audios = glob(dirpath + '/*.mp3')
+    audios = glob(dirpath + '/*.wav')
 
     for i, audio in enumerate(audios):
         print("{}th audio : ".format(i), audio)
@@ -31,9 +32,10 @@ def make_spectrograms_from_mp3s(dirpath):
             block = y[cutpoint * SAMPLING_RATE:int((cutpoint + DURATION) * SAMPLING_RATE)]
             D = librosa.stft(block, n_fft=FFT_SIZE)
             D = np.abs(D)   # since D is a complex number
+            print(D.shape)
             D = np.expand_dims(D, axis=2)
             name = audio[:-4] + '{}.spec'.format(j)
             convert_to(D, name)
 
 if __name__=='__main__':
-    make_spectrograms_from_mp3s('datasets/park')
+    make_spectrograms_from_mp3s('datasets/bass-flute_single')

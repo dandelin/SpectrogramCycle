@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, print_function
 import os
 import batching_spectrograms_single
 import utils
-import models_spec
+import models_spec_disco
 import argparse
 import numpy as np
 import tensorflow as tf
@@ -37,14 +37,14 @@ with tf.Session(config=config) as sess:
     a_real = tf.placeholder(tf.float32, shape=[None, height, width, 1])
     b_real = tf.placeholder(tf.float32, shape=[None, height, width, 1])
 
-    a2b = models_spec.generator(a_real, 'a2b')
-    b2a = models_spec.generator(b_real, 'b2a')
-    b2a2b = models_spec.generator(b2a, 'a2b', reuse=True)
-    a2b2a = models_spec.generator(a2b, 'b2a', reuse=True)
+    a2b = models_spec_disco.generator(a_real, 'a2b')
+    b2a = models_spec_disco.generator(b_real, 'b2a')
+    b2a2b = models_spec_disco.generator(b2a, 'a2b', reuse=True)
+    a2b2a = models_spec_disco.generator(a2b, 'b2a', reuse=True)
 
     # restore
     saver = tf.train.Saver()
-    ckpt_path = utils.load_checkpoint('./checkpoints/' + dataset, sess, saver)
+    ckpt_path = utils.load_checkpoint('./checkpoints/' + dataset + '_disco', sess, saver)
     if ckpt_path is None:
         raise Exception('No checkpoint!')
     else:
@@ -52,7 +52,7 @@ with tf.Session(config=config) as sess:
 
     # test
 
-    save_dir = './test_predictions/' + dataset + '/'
+    save_dir = './test_predictions/' + dataset + '_disco/'
     utils.mkdir([save_dir])
 
     a_test_pool = batching_spectrograms_single.SpecData(sess, a_test_path, batch_size, retain_all=True)

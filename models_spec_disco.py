@@ -52,17 +52,7 @@ def generator(img, scope, gf_dim=64, reuse=False, train=True):
         c3 = relu(bn(conv(c2, gf_dim * 4, 3, 2, scope='c3_conv', padding='SAME'), scope='c3_bn'))
         print(c3) # c3 = [?, ceil(h/4), ceil(w/4), gf_dim*4] 127 x 75
 
-        r1 = residule_block(c3, gf_dim * 4, scope='r1')
-        r2 = residule_block(r1, gf_dim * 4, scope='r2')
-        r3 = residule_block(r2, gf_dim * 4, scope='r3')
-        r4 = residule_block(r3, gf_dim * 4, scope='r4')
-        r5 = residule_block(r4, gf_dim * 4, scope='r5')
-        r6 = residule_block(r5, gf_dim * 4, scope='r6')
-        r7 = residule_block(r6, gf_dim * 4, scope='r7')
-        r8 = residule_block(r7, gf_dim * 4, scope='r8')
-        r9 = residule_block(r8, gf_dim * 4, scope='r9')
-
-        d1 = relu(bn(deconv(r9, gf_dim * 2, 3, 2, scope='d1_dconv'), scope='d1_bn'))
+        d1 = relu(bn(deconv(c3, gf_dim * 2, 3, 2, scope='d1_dconv'), scope='d1_bn'))
         print(d1) # d1 = [?, ceil(h/4) * 2, ceil(w/4) * 2, gf_dim * 2]
         d2 = relu(bn(deconv(d1, gf_dim, 3, 2, scope='d2_dconv'), scope='d2_bn'))
         print(d2) # d2 = [?, ceil(h/4) * 4, ceil(w/4) * 4, gf_dim]
